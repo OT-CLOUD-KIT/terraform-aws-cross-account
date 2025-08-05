@@ -6,6 +6,7 @@ A Terraform module to securely create and manage a cross-account IAM role in AWS
 
 ## Architecture
 
+<img width="1126" height="656" alt="image" src="https://github.com/user-attachments/assets/9a66e7a9-8e69-488d-94e3-55d65c1dc105" />
 
 
 > **Note:**
