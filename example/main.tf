@@ -1,5 +1,5 @@
 module "cross_account_role" {
-  source = "../"
+  source = "git@github.com:OT-CLOUD-KIT/terraform-aws-cross-account.git?ref=Feature"
   trusted_user_arns              = var.trusted_user_arns
   mfa_enabled                       = var.mfa_enabled
   mfa_age                           = var.mfa_age
