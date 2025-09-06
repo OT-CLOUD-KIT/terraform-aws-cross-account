@@ -1,71 +1,96 @@
-AWS Cross Account IAM role module
-=====================================
+# Terraform AWS Cross Account Role
 
-[![Opstree Solutions][opstree_avatar]][opstree_homepage]
+A Terraform module to securely create and manage a cross-account IAM role in AWS, enabling trusted AWS accounts to assume roles with controlled permissions and optional Multi-Factor Authentication (MFA).
 
-[Opstree Solutions][opstree_homepage] 
+---
 
-  [opstree_homepage]: https://opstree.github.io/
-  [opstree_avatar]: https://img.cloudposse.com/150x150/https://github.com/opstree.png
+## Architecture
 
-Terraform module which creates IAM role in target account which will allow user specified AWS accounts to assume it and can access resources according to permission attached to this role
+<img width="1126" height="656" alt="image" src="https://github.com/user-attachments/assets/9a66e7a9-8e69-488d-94e3-55d65c1dc105" />
 
-Terraform versions
-------------------
 
-Terraform 0.12.
+> **Note:**
+> This diagram represents a cross-account access setup, where a trusted AWS account can securely assume a role in another AWS account with MFA enforcement and fine-grained permissions.
 
-Usage
-------
+---
+
+## Providers
+
+| Name                                              | Version  |
+|---------------------------------------------------|----------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.82.2   |
+| <a name="terraform_module"></a> [Terraform](Terraform\module) | >= 1.12.1|
+
+---
+
+## Usage
 
 ```hcl
-provider "aws" {
-  region                  = "ap-south-1"
-}
+module "cross_account_role" {
+  source = "OT-CLOUD-KIT/terraform-aws-cross-account-role"
 
-module "cross_account_iam_role" {
-  source = "../"
+  trusted_account_arn = [
+    "arn:aws:iam::240851516795:user/abhi987"
+  ]
 
-  cross_account_access_role_name = "cross_account_iam_role"
-  trusted_account_ids = ["8763103198","1293216333"]
-  cross_account_policy_permissions = ["s3:ListAllMyBuckets","s3:GetBucketLocation"]
-  cross_account_policy_resources = ["arn:aws:s3:::*"]
   mfa_enabled = true
-  mfa_age = 3600
-}
+  mfa_age     = 300
 
+  cross_account_policy_permissions = [
+    "ec2:DescribeInstances",
+    "s3:ListAllMyBuckets"
+  ]
+
+  cross_account_policy_resources = ["*"]
+
+  cross_account_iam_policy_name              = "CrossAccountAccessPolicy"
+  cross_account_access_role_name             = "CrossAccountAccessRole"
+  cross_account_access_role_description      = "Allows cross-account assume role"
+  cross_account_access_role_path             = "/cross/"
+  cross_account_access_role_max_session_duration = 3600
+}
 ```
 
-```
-output "vpc_id" {
-  value       = module.cross_account_role.cross_account_access_role_id
-}
+> **Note:**
+> This example demonstrates how to configure the module with MFA and basic cross-account permissions.
 
-output "vpc_arn" {
-  value       = module.cross_account_role.cross_account_access_role_arn
-}
-```
-Inputs
-------
+---
+
+## Resources
+
+| Name                                                                                                                  | Type     |
+| --------------------------------------------------------------------------------------------------------------------- | -------- |
+| [aws\_iam\_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role)                | resource |
+| [aws\_iam\_role\_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
+
+---
+
+## Inputs
+
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| trusted_account_ids | List of account ids which can assume cross account role | `list` | No default value | yes |
-| cross_account_policy_permissions | List of permissions granted to cross account role | `list` | No default value | yes |
-| cross_account_policy_resources |List of AWS resources on which permission will be applied | `list` | ["*"] | no |
-| cross_account_access_role_name | Name of cross acccount iam role | `string` | `"cross_account_access_role"` | no |
-| cross_account_access_role_description | Description of cross acccount iam role | `string` | `"IAM Role which will allow trusted AWS accounts to assume it"` | no |
-| cross_account_access_role_max_session_duration | Maximum CLI/API session duration in seconds between 3600 and 43200 | `string` | `"3600"` | no |
-| cross_account_access_role_path | Path of cross account IAM role | `string` | `"/"` | no |
-| cross_account_iam_policy_name | Name of cross account access iam policy | `string` | `"cross_account_iam_policy"` | no |
-| mfa_enabled | Enable MFA for cross account access | `boolean` | `"false"` | no |
-| mfa_age |Max age of valid MFA (in seconds) for roles which require MFA| `string` | `"86400"` | no |
+| <a name="input_trusted_account_arn"></a> [trusted\_account\_arn](#input\_trusted\_account\_arn) | List of AWS account ARNs allowed to assume the role | `list(string)` | `[]` | Yes |
+| <a name="input_mfa_enabled"></a> [mfa\_enabled](#input\_mfa\_enabled) | Enforce MFA when assuming the role | `bool` | `false` | Yes |
+| <a name="input_mfa_age"></a> [mfa\_age](#input\_mfa\_age) | Max age (in seconds) of the MFA authentication | `number` | `300` |No |
+| <a name="input_cross_account_policy_permissions"></a> [cross\_account\_policy\_permissions](#input\_cross\_account\_policy\_permissions) | List of IAM permissions granted by the role | `list(string)` | `[]` | Yes |
+| <a name="input_cross_account_policy_resources"></a> [cross\_account\_policy\_resources](#input\_cross\_account\_policy\_resources) | List of resource ARNs the permissions apply to | `list(string)` | `[]` | Yes |
+| <a name="input_cross_account_iam_policy_name"></a> [cross\_account\_iam\_policy\_name](#input\_cross\_account\_iam\_policy\_name) | Name of the inline IAM policy | `string` | `"CrossAccountAccessPolicy"` | Yes |
+| <a name="input_cross_account_access_role_name"></a> [cross\_account\_access\_role\_name](#input\_cross\_account\_access\_role\_name) | Name of the IAM role to create | `string` | `"CrossAccountAccessRole"` | Yes |
+| <a name="input_cross_account_access_role_description"></a> [cross\_account\_access\_role\_description](#input\_cross\_account\_access\_role\_description) | Description of the IAM role | `string` | `"Allows cross-account assume role"` |No |
+| <a name="input_cross_account_access_role_path"></a> [cross\_account\_access\_role\_path](#input\_cross\_account\_access\_role\_path) | Path for the IAM role | `string` | `"/cross/"` |No |
+| <a name="input_cross_account_access_role_max_session_duration"></a> [cross\_account\_access\_role\_max\_session\_duration](#input\_cross\_account\_access\_role\_max\_session\_duration) | Max session duration for assuming role (in seconds) | `number` | `3600` |No |
 
-Output
-------
+---
+## Outputs
+
 | Name | Description |
 |------|-------------|
-| cross_account_access_role_id | The ID of the IAM Role |
-| cross_account_access_role_arn | The arn of the IAM role |
+| <a name="output_cross_account_role_arn"></a> [cross\_account\_role\_arn](#output\_cross\_account\_role\_arn) | ARN of the created cross-account IAM role |
+| <a name="output_cross_account_role_name"></a> [cross\_account\_role\_name](#output\_cross\_account\_role\_name) | Name of the created IAM role |
 
-### Contributors
-#### Rajat Vats (rajat.vats@opstree.com)
+---
+
+## Contributors
+
+* [Nikita Joshi](https://github.com/jnikita19)
+* [Piyush Upadhyay](https://github.com/piiiyuushh)
